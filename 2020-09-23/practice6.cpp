@@ -17,16 +17,16 @@ GLvoid Timer(int value);
 GLvoid InitBuffer();
 GLvoid InitShader();
 
-GLuint VAO, VBO[2];
+GLuint VAO, VBO;
 
-class Coord {
+class cir {
 public:
 	GLfloat x = 0, y = 0;
+	float rad = 0;
 };
 
 int cnt = 0;
 
-float r[10] = { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 };
 
 char* filetobuf(const char* file) {
 	FILE* fptr;
@@ -47,36 +47,9 @@ char* filetobuf(const char* file) {
 	return buf;
 }
 
-const GLfloat ref_triShape[3][3] = {
-   {-0.125, -0.125 , 0.0},
-   {0.125, -0.125, 0.0},
-   {0.0, 0.125, 0.0}
-};
 
-GLfloat Shape[10][VERTEXS][3];
+GLfloat Circle[VERTEXS][3];
 
-GLfloat colors[4][3][3] = {
-   {
-   {1.0, 0.0, 0.0},
-   {1.0, 0.0, 0.0},
-   {1.0, 0.0, 0.0}
-   },
-	{
-   {1.0, 1.0, 0.0},
-   {1.0, 1.0, 0.0},
-   {1.0, 1.0, 0.0}
-   },
-	{
-   {0.0, 1.0, 0.0},
-   {0.0, 1.0, 0.0},
-   {0.0, 1.0, 0.0}
-   },
-	{
-   {1.0, 0.0, 1.0},
-   {1.0, 0.0, 1.0},
-   {1.0, 0.0, 1.0}
-   },
-};
 
 
 int width;
@@ -91,7 +64,7 @@ GLuint fragmentShader;
 void make_vertexShaders() {
 	// 버텍스 세이더 읽어 저장하고 컴파일 하기
 	GLchar* vertexSource;
-	vertexSource = filetobuf("vertex1.glsl");
+	vertexSource = filetobuf("vertex4-6.glsl");
 
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
@@ -109,7 +82,7 @@ void make_vertexShaders() {
 
 void make_fragmentShaders() {
 	GLchar* fragmentsource;
-	fragmentsource = filetobuf("fragment1.glsl");
+	fragmentsource = filetobuf("fragment4-6.glsl");
 	// 프래그먼트 세이더 읽어 저장하고 컴파일하기
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentsource, NULL);
@@ -185,9 +158,13 @@ GLvoid Reshape(int w, int h) {							//---콜백함수 : 다시 그리기 콜백 함수
 
 GLvoid InitBuffer() {
 	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+	glGenBuffers(1, &VBO);
 
-	glGenBuffers(2, VBO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof)
+
 
 }
 
@@ -195,8 +172,8 @@ GLvoid Mouse(int button, int state, int x, int y) {
 	float f = 0;
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		for (int i = 0; i < VERTEXS; ++i) {
-			Shape[cnt][i][0] = x + r[cnt] * cos(f);
-			Shape[cnt][i][1] = y + r[cnt] * sin(f);
+			Circle[i][0] = x + r[cnt] * cos(f);
+			Circle[i][1] = y + r[cnt] * sin(f);
 			f += 2 * 3.14 / 36;
 			cout << i << ' ' << Shape[cnt][i][0] << ',' << Shape[cnt][i][1] << endl;
 		}
