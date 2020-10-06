@@ -138,7 +138,7 @@ void main(int argc, char** argv) {
 	glutReshapeFunc(Reshape);
 	glutMouseFunc(Mouse);
 	glutKeyboardFunc(Keyboard);
-	glutTimerFunc(10, Timer, 1);
+	glutTimerFunc(15, Timer, 1);
 
 	glutMainLoop();
 }
@@ -186,7 +186,7 @@ GLvoid Mouse(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		if (cirs.size() < 10) {
 			cirs.push_back({ (float)(x - (width / 2)) / (float)width * 2.0f, (-1.0f) * (float)(y - (height / 2)) / (float)height * 2.0f });
-			std::cout << "new x : " << cirs.back().x << " y : " << cirs.back().y << std::endl;
+			std::cout << "new x : " << cirs.back().x << " y : " << cirs.back().y << " type : " << cirs.back().type << std::endl;
 		}
 	}
 	glutPostRedisplay();
@@ -201,13 +201,17 @@ GLvoid Timer(int value) {
 			++iter;
 		}
 		else {
-			if ((*iter).rad > 3.0f)
+			if ((*iter).rad > 2.0f) {
+				cout << "delete Circle x :" << (*iter).x << " y : " << (*iter).y << endl;
 				iter = cirs.erase(iter);
+			}
+			else
+				++iter;
 		}
 		
 	}
 	glutPostRedisplay();
-	glutTimerFunc(10, Timer, 1);
+	glutTimerFunc(15, Timer, 1);
 }
 
 GLvoid UpdateBuffer() {
