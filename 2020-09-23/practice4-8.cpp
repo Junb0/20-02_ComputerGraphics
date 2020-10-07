@@ -325,6 +325,16 @@ GLvoid Timer(int value) {
 				(*iter).dx *= -1.0f;
 				(*iter).direction = RIGHT;
 			}
+			else if (BOXLEFT < (*iter).x + TRIWIDTH / 2 &&
+				BOXTOP < (*iter).y - TRIHEIGHT / 2 &&
+				BOXRIGHT >(*iter).x - TRIWIDTH / 2 &&
+				BOXBOTTOM >(*iter).y + TRIHEIGHT / 2
+				) {
+				if ((*iter).x - TRIWIDTH / 2 > BOXLEFT && (*iter).x + TRIWIDTH / 2 < BOXRIGHT && (*iter).y < 0.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+			}
 
 			break;
 		case DOWN:
