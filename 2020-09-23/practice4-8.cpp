@@ -36,15 +36,17 @@ GLuint VAO[2], VBO[2];
 
 random_device rd;
 default_random_engine dre(rd());
-uniform_real_distribution<> urd1(-0.7f, 0.7f);
+uniform_real_distribution<> urd1(-0.7f, -0.6f);
 uniform_real_distribution<> urd2(0.005f, 0.02f);
-uniform_real_distribution<> urdColor(0.0f, 1.0f);
+uniform_real_distribution<float> urdColor(0.0f, 1.0f);
 
 class tri {
 public:
 	GLfloat x = urd1(dre), y = urd1(dre);	// 삼각형의 pivot 좌표
 	int direction = dre() % 4 + 1;
 	GLfloat dx = urd2(dre), dy = urd2(dre);
+	int type = 1;
+	GLfloat Color[3][3] = { { urdColor(dre), urdColor(dre), urdColor(dre) }, { urdColor(dre), urdColor(dre), urdColor(dre) }, { urdColor(dre), urdColor(dre), urdColor(dre) } };
 
 	tri() {
 		switch (direction) {
@@ -70,20 +72,7 @@ public:
 	}
 };
 
-class innertri : tri {
-public:
-	GLfloat R[3], G[3], B[3];
-
-	innertri() {
-		tri();
-		for (int i = 0; i < 3; ++i) {
-			R[i] = urdColor(dre);
-			G[i] = urdColor(dre);
-			B[i] = urdColor(dre);
-		}
-	}
-};
-std::vector<tri> tris(10);
+std::vector<tri> tris(12);
 
 int cnt = 0;
 
@@ -179,6 +168,8 @@ void InitShader() {
 void main(int argc, char** argv) {
 	width = 700;
 	height = 700;
+	tris[10].type = tris[11].type = 2;
+	tris[10].x = tris[10].y = tris[11].x = tris[11].y = 0.0f;
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
@@ -253,13 +244,21 @@ GLvoid drawScene() {
 			Triangle[2][0][2] = 0.0f;
 			break;
 		}
-		for (int i = 0; i < 3; ++i)			// 색상 초기화
-			for (int j = 0; j < 3; ++j) {
-				if(j == 2)
-					Triangle[i][1][j] = 1.0f;
-				else
-					Triangle[i][1][j] = 0.2f;
-			}
+		if ((*iter).type == 1) {
+			for (int i = 0; i < 3; ++i)			// 색상 초기화
+				for (int j = 0; j < 3; ++j) {
+					if (j == 2)
+						Triangle[i][1][j] = 1.0f;
+					else
+						Triangle[i][1][j] = 0.2f;
+				}
+		}
+		else if ((*iter).type == 2) {
+			for (int i = 0; i < 3; ++i)			// 색상 초기화
+				for (int j = 0; j < 3; ++j) {
+					Triangle[i][1][j] = (*iter).Color[i][j];
+				}
+		}
 
 		UpdateBuffer();
 		glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -311,75 +310,214 @@ GLvoid Timer(int value) {
 	for (std::vector<tri>::iterator iter = tris.begin(); iter != tris.end(); ++iter) {
 		(*iter).x += (*iter).dx;
 		(*iter).y += (*iter).dy;
-		switch ((*iter).direction) {
-		case UP:
-			if ((*iter).y + TRIHEIGHT / 2 > 1.0f) {
-				(*iter).dy *= -1.0f;
-				(*iter).direction = DOWN;
-			}
-			else if ((*iter).x + TRIWIDTH / 2 > 1.0f) {
-				(*iter).dx *= -1.0f;
-				(*iter).direction = LEFT;
-			}
-			else if ((*iter).x - TRIWIDTH / 2 < -1.0f) {
-				(*iter).dx *= -1.0f;
-				(*iter).direction = RIGHT;
-			}
-			else if (BOXLEFT < (*iter).x + TRIWIDTH / 2 &&
-				BOXTOP < (*iter).y - TRIHEIGHT / 2 &&
-				BOXRIGHT >(*iter).x - TRIWIDTH / 2 &&
-				BOXBOTTOM >(*iter).y + TRIHEIGHT / 2
-				) {
-				if ((*iter).x - TRIWIDTH / 2 > BOXLEFT && (*iter).x + TRIWIDTH / 2 < BOXRIGHT && (*iter).y < 0.0f) {
+		if ((*iter).type == 1) {
+			switch ((*iter).direction) {
+			case UP:
+				if ((*iter).y + TRIHEIGHT / 2 > 1.0f) {
 					(*iter).dy *= -1.0f;
 					(*iter).direction = DOWN;
 				}
-			}
+				else if ((*iter).x + TRIWIDTH / 2 > 1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+				else if ((*iter).x - TRIWIDTH / 2 < -1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
+				else if ((*iter).y + TRIHEIGHT / 2 > BOXBOTTOM && (*iter).y - TRIHEIGHT / 2 < BOXBOTTOM && (*iter).x + TRIWIDTH / 2 > BOXLEFT && (*iter).x - TRIWIDTH / 2 < BOXRIGHT) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+				else if ((*iter).y - TRIHEIGHT / 2 < BOXTOP && (*iter).y + TRIHEIGHT / 2 > BOXBOTTOM && (*iter).x + TRIWIDTH / 2 > BOXLEFT && (*iter).x + TRIWIDTH / 2 < BOXLEFT) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+				else if ((*iter).y - TRIHEIGHT / 2 < BOXTOP && (*iter).y + TRIHEIGHT / 2 > BOXBOTTOM && (*iter).x + TRIWIDTH / 2 > BOXRIGHT && (*iter).x + TRIWIDTH / 2 < BOXLEFT) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
 
-			break;
-		case DOWN:
-			if ((*iter).y - TRIHEIGHT / 2 < -1.0f) {
-				(*iter).dy *= -1.0f;
-				(*iter).direction = UP;
+				break;
+			case DOWN:
+				if ((*iter).y - TRIHEIGHT / 2 < -1.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).x + TRIWIDTH / 2 > 1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+				else if ((*iter).x - TRIWIDTH / 2 < -1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
+
+				else if ((*iter).y - TRIHEIGHT / 2 < BOXTOP && (*iter).y + TRIHEIGHT / 2 > BOXTOP && (*iter).x + TRIWIDTH / 2 > BOXLEFT && (*iter).x - TRIWIDTH / 2 < BOXRIGHT) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).y - TRIHEIGHT / 2 < BOXTOP && (*iter).y + TRIHEIGHT / 2 > BOXBOTTOM && (*iter).x + TRIWIDTH / 2 > BOXLEFT && (*iter).x + TRIWIDTH / 2 < BOXLEFT) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+				else if ((*iter).y - TRIHEIGHT / 2 < BOXTOP && (*iter).y + TRIHEIGHT / 2 > BOXBOTTOM && (*iter).x + TRIWIDTH / 2 > BOXRIGHT && (*iter).x + TRIWIDTH / 2 < BOXLEFT) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
+
+			case LEFT:
+				if ((*iter).y + TRIWIDTH / 2 > 1.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+				else if ((*iter).y - TRIWIDTH / 2 < -1.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).x - TRIHEIGHT / 2 < -1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
+
+				else if ((*iter).x - TRIHEIGHT / 2 < BOXRIGHT && (*iter).x + TRIHEIGHT / 2 > BOXRIGHT && (*iter).y - TRIWIDTH / 2 < BOXTOP && (*iter).y + TRIWIDTH / 2 > BOXBOTTOM) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = RIGHT;
+				}
+				else if ((*iter).x - TRIHEIGHT / 2 < BOXRIGHT && (*iter).x + TRIHEIGHT / 2 > BOXLEFT && (*iter).y - TRIWIDTH / 2 < BOXTOP && (*iter).y + TRIWIDTH / 2 > BOXTOP) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).x - TRIHEIGHT / 2 < BOXRIGHT && (*iter).x + TRIHEIGHT / 2 > BOXLEFT && (*iter).y + TRIWIDTH / 2 > BOXBOTTOM && (*iter).y - TRIWIDTH / 2 < BOXBOTTOM) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+				break;
+			case RIGHT:
+				if ((*iter).y + TRIWIDTH / 2 > 1.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+				else if ((*iter).y - TRIWIDTH / 2 < -1.0f) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).x + TRIHEIGHT / 2 > 1.0f) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+
+				else if ((*iter).x + TRIHEIGHT / 2 > BOXLEFT && (*iter).x - TRIHEIGHT / 2 < BOXLEFT && (*iter).y - TRIWIDTH / 2 < BOXTOP && (*iter).y + TRIWIDTH / 2 > BOXBOTTOM) {
+					(*iter).dx *= -1.0f;
+					(*iter).direction = LEFT;
+				}
+				else if ((*iter).x - TRIHEIGHT / 2 < BOXRIGHT && (*iter).x + TRIHEIGHT / 2 > BOXLEFT && (*iter).y - TRIWIDTH / 2 < BOXTOP && (*iter).y + TRIWIDTH / 2 > BOXTOP) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = UP;
+				}
+				else if ((*iter).x - TRIHEIGHT / 2 < BOXRIGHT && (*iter).x + TRIHEIGHT / 2 > BOXLEFT && (*iter).y + TRIWIDTH / 2 > BOXBOTTOM && (*iter).y - TRIWIDTH / 2 < BOXBOTTOM) {
+					(*iter).dy *= -1.0f;
+					(*iter).direction = DOWN;
+				}
+				break;
 			}
-			else if ((*iter).x + TRIWIDTH / 2 > 1.0f) {
+		}
+		else if ((*iter).type == 2) {
+		switch ((*iter).direction) {
+		case UP:
+			if ((*iter).y + TRIHEIGHT / 2 > 0.5f) {
+				(*iter).dy *= -1.0f;
+				(*iter).direction = DOWN;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
+			}
+			else if ((*iter).x + TRIWIDTH / 2 > 0.5f) {
 				(*iter).dx *= -1.0f;
 				(*iter).direction = LEFT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
-			else if ((*iter).x - TRIWIDTH / 2 < -1.0f) {
+			else if ((*iter).x - TRIWIDTH / 2 < -0.5f) {
 				(*iter).dx *= -1.0f;
 				(*iter).direction = RIGHT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
+			}
+			break;
+		case DOWN:
+			if ((*iter).y - TRIHEIGHT / 2 < -0.5f) {
+				(*iter).dy *= -1.0f;
+				(*iter).direction = UP;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
+			}
+			else if ((*iter).x + TRIWIDTH / 2 > 0.5f) {
+				(*iter).dx *= -1.0f;
+				(*iter).direction = LEFT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
+			}
+			else if ((*iter).x - TRIWIDTH / 2 < -0.5f) {
+				(*iter).dx *= -1.0f;
+				(*iter).direction = RIGHT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
 
 		case LEFT:
-			if ((*iter).y + TRIWIDTH / 2 > 1.0f) {
+			if ((*iter).y + TRIWIDTH / 2 > 0.5f) {
 				(*iter).dy *= -1.0f;
 				(*iter).direction = DOWN;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
-			else if ((*iter).y - TRIWIDTH / 2 < -1.0f) {
+			else if ((*iter).y - TRIWIDTH / 2 < -0.5f) {
 				(*iter).dy *= -1.0f;
 				(*iter).direction = UP;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
-			else if ((*iter).x - TRIHEIGHT / 2 < -1.0f) {
+			else if ((*iter).x - TRIHEIGHT / 2 < -0.5f) {
 				(*iter).dx *= -1.0f;
 				(*iter).direction = RIGHT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
 			break;
 		case RIGHT:
-			if ((*iter).y + TRIWIDTH / 2 > 1.0f) {
+			if ((*iter).y + TRIWIDTH / 2 > 0.5f) {
 				(*iter).dy *= -1.0f;
 				(*iter).direction = DOWN;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
-			else if ((*iter).y - TRIWIDTH / 2 < -1.0f) {
+			else if ((*iter).y - TRIWIDTH / 2 < -0.5f) {
 				(*iter).dy *= -1.0f;
 				(*iter).direction = UP;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
-			else if ((*iter).x + TRIHEIGHT / 2 > 1.0f) {
+			else if ((*iter).x + TRIHEIGHT / 2 > 0.5f) {
 				(*iter).dx *= -1.0f;
 				(*iter).direction = LEFT;
+				for (int i = 0; i < 3; ++i)
+					for (int j = 0; j < 3; ++j)
+						(*iter).Color[i][j] = urdColor(dre);
 			}
 			break;
 		}
+}
 	}
 	glutPostRedisplay();
 	glutTimerFunc(10, Timer, 1);
