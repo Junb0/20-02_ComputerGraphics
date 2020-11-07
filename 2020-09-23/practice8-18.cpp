@@ -51,7 +51,7 @@ GLvoid UpdateBuffer();
 GLvoid Timer(int value);
 GLvoid Keyboard(unsigned char key, int x, int y);
 
-GLuint VAO[8], VBO[8];
+GLuint VAO[9], VBO[9];
 
 random_device rd;
 default_random_engine dre(rd());
@@ -302,6 +302,9 @@ glm::mat4 arm2Rotate(1.0f);
 
 glm::mat4 cameraRotate(1.0f);
 
+glm::mat4 tentScale(1.0f);
+glm::mat4 tentTransltae(1.0f);
+
 void InitShader() {
 	make_vertexShaders();
 	make_fragmentShaders();
@@ -331,7 +334,7 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 short isMachineMove = false;
 short isMachineRotate = false;
-short isArmRotate = false;
+short isArmRotate = 1;
 
 void main(int argc, char** argv) {
 	width = 600;
@@ -366,6 +369,9 @@ void main(int argc, char** argv) {
 
 	box1Scale = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 5.0f, 10.0f));
 	box1Translate = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.0f, -5.0f));
+
+	tentScale = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 5.0f, 1.0f));
+	tentTransltae = glm::translate(glm::mat4(1.0f), glm::vec3(-5.0f, 0.0f, 5.0f));
 
 	box2Scale = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 0.6f, 1.0f));
 	box2Translate = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.7f, 0.0f));
@@ -440,22 +446,27 @@ GLvoid drawScene() {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//왼팔
-	tmp = machineTranslate * leftArmTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(0.55f, 0.0f, 0.05f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.55f, 0.0f, -0.05f)) *
+	tmp = machineTranslate * leftArmTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(0.6f, 0.0f, 0.05f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.6f, 0.0f, -0.05f)) *
 		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.7f, 0.0f)) * arm2Rotate * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.7f, 0.0f)) * box4Scale;
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(tmp));
 	glBindVertexArray(VAO[5]);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	//오른팔
-	tmp = machineTranslate * rightArmTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.45f, 0.0f, 0.05f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(0.45f, 0.0f, -0.05f)) *
+	tmp = machineTranslate * rightArmTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.0f, 0.05f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, -0.05f)) *
 		glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.7f, 0.0f)) * arm1Rotate * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.7f, 0.0f)) * box4Scale;
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(tmp));
 	glBindVertexArray(VAO[6]);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//코
-	tmp = machineTranslate * noseTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.1f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.1f, 0.0f, -0.1f)) * noseScale;
+	tmp = machineTranslate * noseTranslate * glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, -0.35f)) * machineRotate * glm::translate(glm::mat4(1.0f), glm::vec3(-0.1f, 0.0f, 0.35f)) * noseScale;
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(tmp));
 	glBindVertexArray(VAO[7]);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	tmp =  tentTransltae * tentScale;
+	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(tmp));
+	glBindVertexArray(VAO[8]);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	glutSwapBuffers();
@@ -466,8 +477,8 @@ GLvoid Reshape(int w, int h) {							//---콜백함수 : 다시 그리기 콜백 함수
 }
 
 GLvoid InitBuffer() {
-	glGenVertexArrays(8, VAO);
-	glGenBuffers(8, VBO);
+	glGenVertexArrays(9, VAO);
+	glGenBuffers(9, VBO);
 
 	// 도형 VAO
 	glBindVertexArray(VAO[0]);
@@ -557,12 +568,34 @@ GLvoid InitBuffer() {
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(VAO[8]);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO[8]);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Cube0), Cube0, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 }
 
 
 float Machinemove = 0.0f;
 float MachineR = 0.0f;
 float ArmR = 0.0f;
+float dy = 0.1f;
+float ySpeed = 0.0f;
+float DisY = 0.0f;
+bool isJump = false;
+
+float machineX = 0.0f;
+float machineZ = 0.0f;
+
+glm::mat4 cameraDegree(1.0f);
+
+bool tentOpen = false;
 
 GLvoid Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
@@ -578,19 +611,31 @@ GLvoid Keyboard(unsigned char key, int x, int y) {
 	case 'M':
 		isMachineRotate = 2;
 		break;
+	case 'w':
+		direction = DOWN;
+		machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		break;
 	case 's':
-	case 'S':
-		isMachineMove = 0;
-		isMachineRotate = 0;
+		direction = UP;
+		machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		break;
-	case 't':
-		isArmRotate = 1;
+	case 'a':
+		direction = LEFT;
+		machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		break;
-	case 'T':
-		isArmRotate = 2;
+	case 'd':
+		direction = RIGHT;
+		machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		break;
-	case 'c':
-	case 'C':
+	case 'j':
+	case 'J':
+		if (!isJump) {
+			isJump = true;
+			ySpeed = 0.5f;
+		}
+		break;
+	case 'i':
+	case 'I':
 		isMachineMove = 0;
 		isMachineRotate = 0;
 		isArmRotate = 0;
@@ -601,34 +646,58 @@ GLvoid Keyboard(unsigned char key, int x, int y) {
 		arm1Rotate = glm::mat4(1.0f);
 		arm2Rotate = glm::mat4(1.0f);
 		ArmR = 0;
+		direction = UP;
+		machineX = 0.5f;
+		machineZ = 0.5f;
+		isJump = false;
+		ySpeed = 0.0f;
+		isArmRotate = 1;
+		DisY = 0.0f;
 		break;
 	case 'z':
 		cameraPos.z += 0.1f;
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
 		break;
 	case 'Z':
 		cameraPos.z -= 0.1f;
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
 		break;
 	case 'x':
 		cameraPos.x += 0.1f;
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
 		break;
 	case 'X':
 		cameraPos.x -= 0.1f;
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
 		break;
 	case 'r':
 		cameraRotate = glm::rotate(cameraRotate, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
 		break;
 	case 'R':
 		cameraRotate = glm::rotate(cameraRotate, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * cameraRotate;
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
+		break;
+	case 'y':
+		cameraDegree = glm::rotate(cameraDegree, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
+		break;
+	case 'Y':
+		cameraDegree = glm::rotate(cameraDegree, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		view = glm::lookAt(cameraPos, cameraDirection, cameraUp) * glm::translate(glm::mat4(1.0f), cameraPos) * cameraDegree * glm::translate(glm::mat4(1.0f), glm::vec3(cameraPos.x * -1, cameraPos.y * -1, cameraPos.z * -1)) * cameraRotate;
+		break;
+	case 'o':
+	case 'O':
+		tentOpen = true;
+		break;
+	case 'q':
+	case 'Q':
+		glutLeaveMainLoop();
 		break;
 	}
 	glutPostRedisplay();
 }
+
 
 GLvoid Timer(int value) {
 
@@ -657,18 +726,68 @@ GLvoid Timer(int value) {
 			isMachineRotate = 0;
 	}
 	if (isArmRotate == 1) {
-		arm1Rotate = glm::rotate(arm1Rotate, glm::radians(0.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		arm2Rotate = glm::rotate(arm2Rotate, glm::radians(-0.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		ArmR += 0.5f;
+		arm1Rotate = glm::rotate(arm1Rotate, glm::radians(2.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		arm2Rotate = glm::rotate(arm2Rotate, glm::radians(-2.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		ArmR += 2.0f;
 		if (ArmR > 45.0f)
-			isArmRotate = 0;
+			isArmRotate = 2;
 	}
 	if (isArmRotate == 2) {
-		arm1Rotate = glm::rotate(arm1Rotate, glm::radians(-0.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		arm2Rotate = glm::rotate(arm2Rotate, glm::radians(0.5f), glm::vec3(1.0f, 0.0f, 0.0f));
-		ArmR -= 0.5f;
+		arm1Rotate = glm::rotate(arm1Rotate, glm::radians(-2.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		arm2Rotate = glm::rotate(arm2Rotate, glm::radians(2.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		ArmR -= 2.0f;
 		if (ArmR < -45.0f)
-			isArmRotate = 0;
+			isArmRotate = 1;
+	}
+
+	switch (direction) {
+	case UP:
+		machineTranslate = glm::translate(machineTranslate, glm::vec3(0.0f, 0.0f, 0.1f));
+		machineZ += 0.1f;
+		if (machineZ >= 4.5f) {
+			direction = DOWN;
+			machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		break;
+	case DOWN:
+		machineTranslate = glm::translate(machineTranslate, glm::vec3(0.0f, 0.0f, -0.1f));
+		machineZ -= 0.1f;
+		if (machineZ <= -4.0f) {
+			direction = UP;
+			machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		break;
+	case LEFT:
+		machineTranslate = glm::translate(machineTranslate, glm::vec3(-0.1f, 0.0f, 0.0f));
+		machineX -= 0.1f;
+		if (machineX <= -4.0f) {
+			direction = RIGHT;
+			machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		break;
+	case RIGHT:
+		machineTranslate = glm::translate(machineTranslate, glm::vec3(0.1f, 0.0f, 0.0f));
+		machineX += 0.1f;
+		if (machineX >= 4.0f) {
+			direction = LEFT;
+			machineRotate = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		break;
+	}
+
+	if (isJump) {
+		if (DisY <= 0.001f && ySpeed <= 0.0f) {
+			isJump = false;
+		}
+		else {
+			machineTranslate = glm::translate(machineTranslate, glm::vec3(0.0f, ySpeed, 0.0f));
+			DisY += ySpeed;
+			ySpeed -= dy;
+		}
+	}
+
+	if (tentOpen) {
+		tentTransltae = glm::translate(tentTransltae, glm::vec3(0.0f, 0.5f, 0.0f));
 	}
 
 	glutPostRedisplay();
