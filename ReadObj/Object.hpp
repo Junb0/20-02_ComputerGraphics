@@ -10,9 +10,26 @@
 #include "ReadObj.h"
 
 class Object {
+public:
 	GLuint vao;
 	GLuint vbo[3];
 	GLuint ebo;
 
+	float* vPosData;
+	float* vNormalData;
+	float* vTextureCoordinateData;
+	int* indexData;
+	int vertexCount;
+	int indexCount;
 
+	const char* fileName;
+
+
+	Object(const char* fileName) {
+		this->fileName = fileName;
+	}
+
+	void InitObj() {
+		ReadObj(this->fileName, this->vPosData, this->vNormalData, this->vTextureCoordinateData, this->indexData, this->vertexCount, this->indexCount);
+	}
 };
