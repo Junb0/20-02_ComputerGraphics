@@ -17,7 +17,7 @@ void main(void)
 
 	vec3 normalVector = normalize(v2f_normal);
 	vec3 lightDir = normalize(g_lightPos - v2f_worldPos);
-	float diffuseLight = max(dot(v2f_normal, lightDir), 0.0);
+	float diffuseLight = max(dot(normalVector, lightDir), 0.0);
 	vec3 diffuse = diffuseLight * g_lightColor;
 
 	int shininess = 128;

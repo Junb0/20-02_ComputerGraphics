@@ -56,7 +56,7 @@ bool draw_fill = true;
 
 int light_type = 0;		// 0 : WHITE 1 : MAGENTA 2 : CYAN
 
-glm::vec3 light_colors[4] = { glm::vec3(1.0, 1.0, 1.0), glm::vec3(1.0, 0.5, 1.0), glm::vec3(0.5, 1.0, 1.0) };
+glm::vec3 light_colors[4] = { glm::vec3(0.7, 0.7, 0.7), glm::vec3(0.7, 0.3, 0.7), glm::vec3(0.3, 0.7, 0.7) };
 glm::vec3 light_pos;
 glm::mat4 light_pos_mat(1.0f);
 
