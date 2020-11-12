@@ -107,7 +107,7 @@ public:
 std::list<Object> objs;
 std::list<Object> grid_objs;
 
-bool grid[3][8] = { {0,}, };
+bool grid[3][8];		// 맨 아래줄 : 2행
 
 int width = 600, height = 600;
 int nRect = 0;
@@ -245,6 +245,9 @@ int main(int argc, char** argv) {						//---윈도우 출력하고 콜백함수 
 		std::cout << "GLEW Initialized\n";
 
 	objs.push_back(MakeObject());
+	for (int i = 0; i < 3; ++i)
+		for (int j = 0; j < 8; ++j)
+			grid[i][j] = false;
 
 	old_t = glutGet(GLUT_ELAPSED_TIME);
 
@@ -503,7 +506,30 @@ GLvoid Timer(int value) {
 				(*iterV).y += (*iterO).gravity * dt;
 			// 떨어진 도형 삭제
 			if ((*iterO).getRect().first.y < -1.0f) {
-				cout << endl << "도형 떨어짐" << endl;
+				cout << endl << "도형 추락" << endl;
+				cout << (*iterO).getWHCenter().x << ',' << (*iterO).getWHCenter().y << endl;
+				// 도형 넣을 그리드 인덱스 찾기
+				int tmp = GetGridX((*iterO).getCenter());
+				int isOk = -1;
+				for (int i = 2; i >= 0; --i) {	// 밑에서부터 올라오면서 체크
+					if (grid[i][tmp] == false) {
+						grid[i][tmp] = true;
+						isOk = i;
+						cout << " ~~~ " << i << "행 " << tmp << "열에 들어감." << endl;
+						break;
+					}
+				}
+				if (isOk == -1) {
+					cout << "추락 도형 그리드에 못들어감" << endl;
+				}
+				else {	// 그리드에 도형 넣기 과정
+					// 로직
+					// 1. 오브젝트의 너비를 구한 후 너비와 그리드 너비간의 간격을 구함
+					// 2. 모든 버텍스 x, y에 비율 곱하기
+					// 3. 높이에 대해서도 동일하게 처리
+					// 4. 변환된 도형의 중심과 그리드 칸의 중심간의 거리를 구하여 위치 이동.
+				}
+
 				iterO = objs.erase(iterO);
 			}
 			else
