@@ -13,6 +13,8 @@
 
 #define SPAWNCOOLTIME 2.0f
 
+#define PI 3.141592f
+
 using namespace std;
 
 GLvoid drawScene(GLvoid);
@@ -54,11 +56,11 @@ public:
 	float dy = urdDeltaSpeedY(dre);
 	float gravity = urdDeltaSpeed(dre) * -1.0;
 
-	coord getCenter() {
+	coord getCenter() {		// 도형의 무게중심 구하기 (경로 출력용)
 		coord tmp;
 		float tmpX = 0.0f;
 		float tmpY = 0.0f;
-		if (this->vertexs.size() >= 3) {
+		if (vertexs.size() >= 3) {
 			for (std::vector<coord>::iterator iter = vertexs.begin(); iter != vertexs.end(); iter++) {
 				tmpX += (*iter).x;
 				tmpY += (*iter).y;
@@ -70,6 +72,35 @@ public:
 			cout << "error : 도형의 무게중심을 구할 수 없음." << endl;
 		}
 		return tmp;
+	}
+
+	std::pair<coord, coord> getRect() {		// 오브젝트의 사각형의 좌상단, 우하단 점 반환
+		coord tmp;
+		float minX = vertexs[0].x, maxX = vertexs[0].x;
+		float minY = vertexs[0].y, maxY = vertexs[0].y;
+		float tmpY = 0.0f;
+		if (vertexs.size() >= 3) {
+			for (std::vector<coord>::iterator iter = vertexs.begin(); iter != vertexs.end(); iter++) {
+				if ((*iter).x < minX)
+					minX = (*iter).x;
+				if ((*iter).x > maxX)
+					maxX = (*iter).x;
+				if ((*iter).y < minY)
+					minY = (*iter).y;
+				if ((*iter).y > maxY)
+					maxY = (*iter).y;
+			}
+		}
+		else {
+			cout << "error : 도형의 중심을 구할 수 없음." << endl;
+		}
+		return std::pair<coord, coord>{ {minX, maxY}, { maxX, minY }};
+	}
+
+	coord getWHCenter() {		// 도형의 너비, 높이의 중심 구하기 (격자 사이즈 맞추기 용)
+		pair<coord, coord> tmp;
+		tmp = getRect();
+		return coord{(tmp.first.x + tmp.second.x) / 2, (tmp.first.y + tmp.second.y) / 2 };
 	}
 };
 
@@ -95,6 +126,13 @@ coord endPoint;		// 마우스 드래그 끝점
 int old_t;	// 델타타임 구하는 용도
 float spawnCnt = 0.0f;	// spawnCnt가 SPAWNCOOLTIME에 도달할때 마다 도형 랜덤 생성
 
+int GetGridX(coord crd) {
+	for (int i = 0; i < 8; ++i) {
+		if (crd.x >= -1.0f + (i * 0.25f) && crd.x < -1.0f + ((i + 1) * 0.25f))
+			return i;
+	}
+}
+
 bool GetIntersectPoint(const coord& AP1, const coord& AP2,			// 선분과 선분의 교차점 검사 및 IP에 교차점 저장
 	const coord& BP1, const coord& BP2, coord* IP)
 {
@@ -118,9 +156,10 @@ bool GetIntersectPoint(const coord& AP1, const coord& AP2,			// 선분과 선분
 	return true;
 }
 
-Object MakeTriangle() {
+Object MakeObject() {		// 랜덤 도형 만들어 반환
 	Object Obj;
-	switch (dre() % 3) {
+	switch (dre()%7) {
+	// 삼각형
 	case 0:
 		Obj.vertexs.push_back(coord{ 0, 0.25 });
 		Obj.vertexs.push_back(coord{ 0.25, -0.25 });
@@ -135,6 +174,30 @@ Object MakeTriangle() {
 		Obj.vertexs.push_back(coord{ 0.25, 0.25 });
 		Obj.vertexs.push_back(coord{ 0.2, -0.1 });
 		Obj.vertexs.push_back(coord{ -0.25, -0.2 });
+		break;
+	// 사각형
+	case 3:
+		Obj.vertexs.push_back(coord{ -0.25, 0.25 });
+		Obj.vertexs.push_back(coord{ 0.25, 0.25 });
+		Obj.vertexs.push_back(coord{ 0.25, -0.25 });
+		Obj.vertexs.push_back(coord{ -0.25, -0.25 });
+		break;
+	case 4:
+		Obj.vertexs.push_back(coord{ -0.15, 0.2 });
+		Obj.vertexs.push_back(coord{ 0.15, 0.2 });
+		Obj.vertexs.push_back(coord{ 0.25, -0.2 });
+		Obj.vertexs.push_back(coord{ -0.25, -0.2 });
+		break;
+	// 원
+	case 5:
+		for (int degree = 0; degree < 360; degree += 16) {
+			Obj.vertexs.push_back(coord{ cosf((float)degree * PI / 180.0) * 0.25f, sinf((float)degree * PI / 180.0) * 0.25f});
+		}
+		break;
+	case 6:
+		for (int degree = 0; degree < 360; degree += 32) {
+			Obj.vertexs.push_back(coord{ cosf((float)degree * PI / 180.0) * 0.25f, sinf((float)degree * PI / 180.0) * 0.25f });
+		}
 		break;
 	}
 	float tmpY = urdMakeY(dre);
@@ -181,7 +244,7 @@ int main(int argc, char** argv) {						//---윈도우 출력하고 콜백함수 
 	else
 		std::cout << "GLEW Initialized\n";
 
-	objs.push_back(MakeTriangle());
+	objs.push_back(MakeObject());
 
 	old_t = glutGet(GLUT_ELAPSED_TIME);
 
@@ -269,7 +332,7 @@ GLvoid Reshape(int w, int h) {							//---콜백함수 : 다시 그리기 콜백
 }
 
 GLvoid Mouse(int button, int state, int x, int y) {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && YY(y) > -0.55f) {
 		isDrag = true;
 		startPoint.x = XX(x);
 		startPoint.y = YY(y);
@@ -279,7 +342,7 @@ GLvoid Mouse(int button, int state, int x, int y) {
 
 		cout << endl << "드래그 시작 x : "<< startPoint.x << " y : " << startPoint.y << endl;
 	}
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && isDrag) {
 		isDrag = false;
 		endPoint.x = XX(x);
 		endPoint.y = YY(y);
@@ -409,7 +472,7 @@ GLvoid Timer(int value) {
 	old_t = t;
 
 	if (spawnCnt >= SPAWNCOOLTIME) {
-		objs.push_back(MakeTriangle());
+		objs.push_back(MakeObject());
 		spawnCnt = 0.0f;
 	}
 	spawnCnt += dt;
@@ -434,13 +497,23 @@ GLvoid Timer(int value) {
 	}
 
 	// isFalling == true 인 오브젝트 떨어지게 하기
-	for (std::list<Object>::iterator iterO = objs.begin(); iterO != objs.end(); ++iterO) {
+	for (std::list<Object>::iterator iterO = objs.begin(); iterO != objs.end();) {
 		if ((*iterO).isFalling == true) {
 			for (std::vector<coord>::iterator iterV = (*iterO).vertexs.begin(); iterV != (*iterO).vertexs.end(); ++iterV)
 				(*iterV).y += (*iterO).gravity * dt;
+			// 떨어진 도형 삭제
+			if ((*iterO).getRect().first.y < -1.0f) {
+				cout << endl << "도형 떨어짐" << endl;
+				iterO = objs.erase(iterO);
+			}
+			else
+				iterO++;
 		}
+		else
+			iterO++;
 	}
 
+	
 	glutPostRedisplay();
 	glutTimerFunc(10, Timer, 1);
 }
