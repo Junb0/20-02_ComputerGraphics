@@ -9,7 +9,12 @@
 #include <random>
 #include <cmath>
 #define rndclr {urdColor(dre), urdColor(dre), urdColor(dre)}
-#define PIE 3.1415926535
+#define PIE 3.1415926535f
+
+std::random_device rd;
+std::default_random_engine dre(rd());
+std::uniform_real_distribution<> urdColor(0.0f, 1.0f);
+std::uniform_real_distribution<> urdDegree(0.0f, 360.0f);
 
 class Robot {
 public:
@@ -29,10 +34,6 @@ public:
 	bool isChase = false;
 
 	Robot(float x, float z) {
-		std::random_device rd;
-		std::default_random_engine dre(rd());
-		std::uniform_real_distribution<> urdColor(0.0f, 1.0f);
-		std::uniform_real_distribution<> urdDegree(0.0f, 360.0f);
 		this->x = x;
 		this->z = z;
 		this->headColor = rndclr;
@@ -106,33 +107,45 @@ public:
 			dd = 1.0f;
 
 		// 플레이어 추적 체크
+		float distance = sqrtf(powf(px - x, 2) + powf(pz - z, 2));
+		if (distance < 8.0f) {
+			isChase = true;
+		}
+		else {
+			if(isChase)
+				Degree = urdDegree(dre);
+			isChase = false;
+		}
+
+		// 추적중일때 방향전환
+		if (isChase) {
+			Degree = (atan2f(-pz + z, px - x) * 180.0f) / PIE;
+		}
 
 		// 이동
 
-		if (isChase == false) {		// 플레이어 추적중이 아닐때
-			x += cosf(glm::radians(Degree)) * dt * speed;
-			z -= sinf(glm::radians(Degree)) * dt * speed;
+		x += cosf(glm::radians(Degree)) * dt * speed;
+		z -= sinf(glm::radians(Degree)) * dt * speed;
 
-			// 왼쪽벽 충돌
-			if (x < -15.0f) {
-				x = -15.0f;
-				Degree += 180.0f;
-			}
-			// 오른쪽벽 충돌
-			if (x > 15.0f) {
-				x = 15.0f;
-				Degree += 180.0f;
-			}
-			// 위쪽 벽 충돌
-			if (z < -15.0f) {
-				z = -15.0f;
-				Degree += 180.0f;
-			}
-			// 아래쪽 벽 충돌
-			if (z > 15.0f) {
-				z = 15.0f;
-				Degree += 180.0f;
-			}
+		// 왼쪽벽 충돌
+		if (x < -15.0f) {
+			x = -15.0f;
+			Degree += 180.0f;
+		}
+		// 오른쪽벽 충돌
+		if (x > 15.0f) {
+			x = 15.0f;
+			Degree += 180.0f;
+		}
+		// 위쪽 벽 충돌
+		if (z < -15.0f) {
+			z = -15.0f;
+			Degree += 180.0f;
+		}
+		// 아래쪽 벽 충돌
+		if (z > 15.0f) {
+			z = 15.0f;
+			Degree += 180.0f;
 		}
 	}
 };
@@ -142,6 +155,7 @@ public:
 	float x = 0.0f;
 	float z = 0.0f;
 	float degree = 90.0f;
+	bool isThirdView = true;
 };
 
 void DrawGround(GLuint shaderID) {
@@ -165,7 +179,7 @@ void DrawPlayer(GLuint shaderID, Player player) {
 	transformLocation = glGetUniformLocation(shaderID, "g_modelTransform");
 	colorLocation = glGetUniformLocation(shaderID, "color");
 
-	transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(player.x, 3.0f, player.z)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	transformMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(player.x, 2.0f, player.z)) * glm::rotate(glm::mat4(1.0f), glm::radians(player.degree), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(transformMatrix));
 	glUniform3fv(colorLocation, 1, glm::value_ptr(glm::vec3(0.9f, 0.9f, 0.9f)));
 	glDrawArrays(GL_TRIANGLES, 0, 36);
